@@ -20,18 +20,19 @@ void main() {
      for(;;){
           if(TIM1_SR.UIF == 1){ //check if counter reached target value
                TIM1_SR.UIF = 0; //clear the check bit
-               GPIOE_ODR = ~ GPIOE_ODR; //flips PE8
+               GPIOA_ODR.B0 = ~GPIOA_ODR.B0; //flips PE8
           }
      }
 }
 
 void initTIM1(){
      RCC_APB2ENR |= 1 << 11; //enable clock for TIM1
-     TIM1_CR1 = 0; //clear control register for initialization
-     TIM1_PSC = 7999; //1 second if counting to 5000
+     TIM1_CR1 = 0x0000; //clear control register for initialization
+     TIM1_PSC = 14399; //1 second if counting to 5000
                        //5000 = 72,000,000/(14399 + 1)
-     TIM1_ARR = 9000;  //target value for the counter
-     TIM1_CR1 = 1;     //enable timer
+     TIM1_ARR = 5000;  //target value for the counter
+     NVIC_ISER0 |= 1 << 24; //Enable break interrupt for TIM1
+     TIM1_CR1 = 0x0001;     //enable timer
 }
 
 void initGPIO(){  //starts the clocks for GPIO
@@ -41,5 +42,5 @@ void initGPIO(){  //starts the clocks for GPIO
      RCC_APB2ENR |= 1 << 5;  //enables clock for PortD
      RCC_APB2ENR |= 1 << 6;  //enables clock for PortE
      
-     GPIOE_CRH = 0x33333333; // sets PE8 as an output
+     GPIOA_CRL = 0x3; // sets PortA/L as an output
 }
