@@ -14,10 +14,13 @@ void initGPIO();
 
 //******************************************************************************
 //Interrupt Routines:
-void TIM1_ISR() iv IVT_INT_TIM1_CC {
+void TIM1_ISR() iv IVT_INT_TIM1_UP {
      TIM1_SR.UIF = 0; //clear the check bit
      GPIOA_ODR.B0 = ~GPIOA_ODR.B0; //flips PE8
 }
+
+
+
 //******************************************************************************
 //Main:
 void main() {
@@ -34,7 +37,7 @@ void initTIM1(){
      TIM1_PSC = 14399; //1 second if counting to 5000
                        //5000 = 72,000,000/(14399 + 1)
      TIM1_ARR = 5000;  //target value for the counter
-     NVIC_ISER0 |= 1 << 24; //Enable break interrupt for TIM1
+     NVIC_ISER0.B25 = 1; //Enable break interrupt for TIM1
      TIM1_DIER.UIE = 1; //enable update interrupts for our timer
      TIM1_CR1 = 0x0001;     //enable timer
 }
