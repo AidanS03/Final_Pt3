@@ -1,0 +1,4 @@
+<WCH v="2">
+<item n="_TIM1count" r="0" s="True" e="False" i="0"/>
+<item n="GPIOD_ODR" r="1" s="False" e="False" i="1"/>
+</WCH>
