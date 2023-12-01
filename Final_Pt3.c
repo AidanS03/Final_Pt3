@@ -40,9 +40,6 @@ void TIM3_ISR() iv IVT_INT_TIM3 ics ICS_OFF {
      initTIM3(); //will read pot and update the ARR to change timer speed
      GPIOA_ODR.B0 = ~GPIOA_ODR.B0; //flips PA0
      GPIOE_ODR.B14 = ~GPIOE_ODR.B14;
-     //Delay_ms(1);                     This is stuff for buzzer but it's weird
-     //GPIOE_ODR.B14 = ~GPIOE_ODR.B14;  I can either use delay and buzzer works but not
-     //Delay_ms(1);                     7-seg or no delay and I get 7-seg but no buzz
 }
 //******************************************************************************
 //Main:
