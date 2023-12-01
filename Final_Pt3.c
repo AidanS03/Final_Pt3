@@ -17,6 +17,7 @@ int pressCounts[6] = {0,0,0,0,0,0}; //from left to right UP, RT, DN, LT, CK
 //******************************************************************************
 //Functions:
 void initTIM1();
+void initTIM3();
 void initGPIO();
 void find7segVal(int sec);
 void sendChar(char message);
@@ -24,13 +25,19 @@ void sendPressCount(int IDX);
 int joyRead();
 void sendPressed();
 void initUSART();
+int analogRead();
 //******************************************************************************
 //Interrupt Routines:
 void TIM1_ISR() iv IVT_INT_TIM1_UP {
      TIM1_SR.UIF = 0; //clear the check bit
-     GPIOA_ODR.B0 = ~GPIOA_ODR.B0; //flips PE8
      TIM1count++;
      pressCounts[5]++;
+}
+
+void TIM3_ISR() iv IVT_INT_TIM3 ics ICS_OFF {
+     TIM3_SR.UIF = 0; //clear the check bit
+     initTIM3(); //will read pot and update the ARR to change timer speed
+     GPIOA_ODR.B0 = ~GPIOA_ODR.B0; //flips PA0
 }
 
 //******************************************************************************
@@ -39,6 +46,7 @@ void main() {
      initUSART(); //starts USART1
      initGPIO(); //initializes GPIO
      initTIM1(); //Initializes TIM1
+     initTIM3();
      TIM1count = -1;
      for(;;){
           if(TIM1count >= 100){
@@ -127,6 +135,17 @@ void initTIM1(){
      NVIC_ISER0.B25 = 1; //Enable update interrupt for TIM1
      TIM1_DIER.UIE = 1; //enable update interrupts for our timer
      TIM1_CR1 = 0x0001;     //enable timer
+}
+
+void initTIM3(){
+     RCC_APB1ENR |= 1 << 1; //enable clock for TIM3
+     TIM3_CR1 = 0; //clear control register for configuration
+     TIM3_PSC = 7199; // 1 second if ARR = 10,000
+                      // 10,000 = 72,000,000/(7,199 + 1)
+     TIM3_ARR = -833.33333*analogRead() + 10833.333333; //timer 3 target value needs to be variable based on analog read
+     NVIC_ISER0.B29 = 1; //Enable update interrupt for TIM3
+     TIM3_DIER.UIE = 1; //enable update interrupts for our timer
+     Tim3_CR1 = 1; //enable timer
 }
 
 void initGPIO(){  //starts the clocks for GPIO
@@ -221,4 +240,29 @@ void initUSART(){ //starts USART1
      USART1_CR1.B3 = 1; //Tx enabled
      USART1_CR1.B13 = 1; //Enables UART and needs to be enabled after all the configuration above
      Delay_ms(100);
+}
+
+int analogRead(){
+     int ADCval;
+     int adjustedADC;
+//Configure the ADC
+     GPIOC_CRL = 0;         //Sets PC0 to be an analog input
+     RCC_APB2ENR |= 1 << 9 ; // Enable ADC1 Clock
+     ADC1_SQR1 = 0; // sets ADC to do 1 conversion
+     ADC1_SQR3 = 10; // Select Channel 10 as only one in conversion sequence
+     ADC1_SMPR1 = 0b100; // Set sample time on channel 10
+     ADC1_CR2.B17 = 1; // Set software start as external event for regular group conversion
+     ADC1_CR2.B18 = 1;
+     ADC1_CR2.B19 = 1;
+     ADC1_CR2.ADON = 1; // Enable ADC1
+
+//read the value of the ADC
+     ADC1_CR2.B20 = 1 ; //enables external trigger conversion mode
+     ADC1_CR2.B22 = 1; //starts the conversion
+     while(ADC1_SR.B1 != 1){} //wait until conversion is done
+     ADCval = ADC1_DR;
+//scale the ADC value
+     adjustedADC = (0.02584856397 * ADCval) + (0.974151436) + 0.5; //pot goes from 0-3831 we want to display 1-100 so this formula
+     //scales the ADC value to be between 1 and 100 the extra 0.5 is needed for rounding
+     return adjustedADC;
 }
