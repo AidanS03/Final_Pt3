@@ -142,10 +142,10 @@ void initTIM3(){
      TIM3_CR1 = 0; //clear control register for configuration
      TIM3_PSC = 7199; // 1 second if ARR = 10,000
                       // 10,000 = 72,000,000/(7,199 + 1)
-     TIM3_ARR = -833.33333*analogRead() + 10833.333333; //timer 3 target value needs to be variable based on analog read
+     TIM3_ARR = -90.90909090 * analogRead() + 10090.90909090; //timer 3 target value needs to be variable based on analog read
      NVIC_ISER0.B29 = 1; //Enable update interrupt for TIM3
      TIM3_DIER.UIE = 1; //enable update interrupts for our timer
-     Tim3_CR1 = 1; //enable timer
+     TIM3_CR1 = 1; //enable timer
 }
 
 void initGPIO(){  //starts the clocks for GPIO
