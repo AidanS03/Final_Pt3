@@ -101,9 +101,10 @@ void main() {
      initTIM1(); //Initializes TIM1
      initTIM3(); //Initializes TIM3
      TIM1count = -1;
-     NVIC_ISERO.B8 = 1; //enable line 2 external interupt
-     NVIC_ISERO.B10 = 1; //enable line 4 external interrupt
-     NVIC_ISERO.B23 = 1; //enable line 5-9 external interrupt
+     NVIC_ISER0.B8 = 1; //enable line 2 external interupt
+     NVIC_ISER0.B10 = 1; //enable line 4 external interrupt
+     NVIC_ISER0.B23 = 1; //enable line 5-9 external interrupt
+     sent = 0;
      for(;;){
           if(TIM1count >= 100){
                TIM1count = 0;
@@ -162,6 +163,11 @@ void initGPIO(){  //starts the clocks for GPIO
      
      GPIOA_CRL = 0x3; // sets PA0 as an output
      GPIOD_CRH = 0x33333333; //set PortD/H as an output
+     
+     AFIO_EXTICR1 |= 3 << 8; //enable external interrupt for PD2
+     AFIO_EXTICR2 = 0x0013; //enable external interrupt for PD4, PB5 and PA6
+     EXTI_SWIER = 0x74; //set software interrupts for external lines 2, 4, 5, 6
+     EXTI_FTSR = 0x74;  //set falling edge triggers for external lines 2, 4, 5, 6
 }
 
 void find7segVal(int sec){
