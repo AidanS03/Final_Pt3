@@ -35,9 +35,12 @@ void TIM1_ISR() iv IVT_INT_TIM1_UP {
 }
 
 void TIM3_ISR() iv IVT_INT_TIM3 ics ICS_OFF {
+     GPIOE_CRH = 0x040000000; // sets PE14 as an output for buzzer
      TIM3_SR.UIF = 0; //clear the check bit
      initTIM3(); //will read pot and update the ARR to change timer speed
      GPIOA_ODR.B0 = ~GPIOA_ODR.B0; //flips PA0
+     GPIOE_IDR.B14 = 1; //turns on buzzer
+     GPIOE_IDR = 0; //turns off buzzer
 }
 
 //******************************************************************************
@@ -156,7 +159,7 @@ void initGPIO(){  //starts the clocks for GPIO
      RCC_APB2ENR |= 1 << 6;  //enables clock for PortE
      
      GPIOA_CRL = 0x3; // sets PA0 as an output
-     GPIOD_CRH = 0x33333333; //set PortE/H as an output
+     GPIOD_CRH = 0x33333333; //set PortD/H as an output
 }
 
 void find7segVal(int sec){
