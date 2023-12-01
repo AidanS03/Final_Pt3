@@ -53,10 +53,6 @@ void main() {
                recieved = USART1_DR; //check if reciever data register is empty and update if it is
           }
           if(recieved == 'Q'){
-               if(USART1_SR.B7 == 1){
-                    USART1_DR = 65;
-               }
-               Delay_ms(1);
                //print press count for each button to UART1
                for(i = 0; i < 38; i++){
                     sendChar(CountMessage[i]); //sends the data title
