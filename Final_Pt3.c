@@ -6,7 +6,7 @@
 //             using interupts, and activate a buzzer using an interupt
 //******************************************************************************
 //Global Variables:
-int TIM1count, i, recieved, temp, sent, joy;
+int TIM1count, i, recieved, temp, sent, joy, buzzerOn;
 int leftNum[10] = {0xA000, 0xA100, 0xA400, 0xA500, 0xB000, 0xB100, 0xB400, 0xB500, 0xE000, 0xE100};
 int rightNum[10] = {0xA800, 0xA900, 0xAC00, 0xAD00, 0xB800, 0xB900, 0xBC00, 0xBD00, 0xE800, 0xE900}; //Variables for 7-seg display initially set to 0
 int leftIDX, rightIDX;
@@ -35,14 +35,15 @@ void TIM1_ISR() iv IVT_INT_TIM1_UP {
 }
 
 void TIM3_ISR() iv IVT_INT_TIM3 ics ICS_OFF {
-     GPIOE_CRH = 0x040000000; // sets PE14 as an output for buzzer
+     GPIOE_CRH = 0x33333333; // sets PE14 as an output for buzzer
      TIM3_SR.UIF = 0; //clear the check bit
      initTIM3(); //will read pot and update the ARR to change timer speed
      GPIOA_ODR.B0 = ~GPIOA_ODR.B0; //flips PA0
-     GPIOE_IDR.B14 = 1; //turns on buzzer
-     GPIOE_IDR = 0; //turns off buzzer
+     GPIOE_ODR.B14 = ~GPIOE_ODR.B14;
+     //Delay_ms(1);                     This is stuff for buzzer but it's weird
+     //GPIOE_ODR.B14 = ~GPIOE_ODR.B14;  I can either use delay and buzzer works but not
+     //Delay_ms(1);                     7-seg or no delay and I get 7-seg but no buzz
 }
-
 //******************************************************************************
 //Main:
 void main() {
@@ -51,6 +52,7 @@ void main() {
      initTIM1(); //Initializes TIM1
      initTIM3();
      TIM1count = -1;
+     buzzerOn = 0;
      for(;;){
           if(TIM1count >= 100){
                TIM1count = 0;
