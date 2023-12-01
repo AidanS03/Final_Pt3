@@ -6,7 +6,7 @@
 //             using interupts, and activate a buzzer using an interupt
 //******************************************************************************
 //Global Variables:
-int TIM1count, i, recieved, temp, sent, joy, buzzerOn;
+int TIM1count, i, recieved, temp, sent, joy;
 int leftNum[10] = {0xA000, 0xA100, 0xA400, 0xA500, 0xB000, 0xB100, 0xB400, 0xB500, 0xE000, 0xE100};
 int rightNum[10] = {0xA800, 0xA900, 0xAC00, 0xAD00, 0xB800, 0xB900, 0xBC00, 0xBD00, 0xE800, 0xE900}; //Variables for 7-seg display initially set to 0
 int leftIDX, rightIDX;
@@ -41,15 +41,69 @@ void TIM3_ISR() iv IVT_INT_TIM3 ics ICS_OFF {
      GPIOA_ODR.B0 = ~GPIOA_ODR.B0; //flips PA0
      GPIOE_ODR.B14 = ~GPIOE_ODR.B14;
 }
+
+void PD2_ISR() iv IVT_INT_EXTI2 ics ICS_OFF {
+     joy = joyRead();
+     if(joy == 4){
+          if(sent == 0){
+               sendChar('L');
+               sendChar('T');
+               sendPressed();
+               sent = 1;
+               pressCounts[3] = pressCounts[3] + 1;
+          }
+     }else if(joy == 0){
+          sent = 0;
+     }
+}
+
+void PD4_ISR() iv IVT_INT_EXTI4 ics ICS_OFF {
+     joy = joyRead();
+     if(joy == 1){
+          if(sent == 0){
+               sendChar('U');
+               sendChar('P');  //sends the message, updates the sent variable and adds one to the count
+               sendPressed();  //same process for each direction
+               sent = 1;
+               pressCounts[0] = pressCounts[0] + 1;
+          }
+     }else if(joy == 0){
+          sent = 0;
+     }
+}
+
+void PA6_PB5_ISR() iv IVT_INT_EXTI9_5 ics ICS_OFF {
+     if(joy == 2){
+          if(sent == 0){
+               sendChar('R');
+               sendChar('T');
+               sendPressed();
+               sent = 1;
+               pressCounts[1] = pressCounts[1] + 1;
+          }
+     }else if(joy == 3){
+          if(sent == 0){
+               sendChar('D');
+               sendChar('N');
+               sendPressed();
+               sent = 1;
+               pressCounts[2] = pressCounts[2] + 1;
+          }
+     }else if(joy == 0){
+          sent = 0;
+     }
+}
 //******************************************************************************
 //Main:
 void main() {
      initUSART(); //starts USART1
      initGPIO(); //initializes GPIO
      initTIM1(); //Initializes TIM1
-     initTIM3();
+     initTIM3(); //Initializes TIM3
      TIM1count = -1;
-     buzzerOn = 0;
+     NVIC_ISERO.B8 = 1; //enable line 2 external interupt
+     NVIC_ISERO.B10 = 1; //enable line 4 external interrupt
+     NVIC_ISERO.B23 = 1; //enable line 5-9 external interrupt
      for(;;){
           if(TIM1count >= 100){
                TIM1count = 0;
@@ -72,57 +126,6 @@ void main() {
                }
           }
           recieved = 0; //clears the pause/unpause variable, needed to prevent looping
-          joy = joyRead(); //reads what direction the joystick is in and returns 0-5
-          switch(joy){
-               case 0: //no press do nothing
-                    sent = 0; //sent variable is used to avoid the message from being sent multiple times for one press
-                    break;
-               case 1: //up press, send UP
-                    if(sent == 0){
-                         sendChar('U');
-                         sendChar('P');  //sends the message, updates the sent variable and adds one to the count
-                         sendPressed();  //same process for each direction
-                         sent = 1;
-                         pressCounts[0] = pressCounts[0] + 1;
-                         break;
-                    }
-               case 2: //right press, send RT
-                    if(sent == 0){
-                         sendChar('R');
-                         sendChar('T');
-                         sendPressed();
-                         sent = 1;
-                         pressCounts[1] = pressCounts[1] + 1;
-                         break;
-                    }
-               case 3: //down press, send DN
-                    if(sent == 0){
-                         sendChar('D');
-                         sendChar('N');
-                         sendPressed();
-                         sent = 1;
-                         pressCounts[2] = pressCounts[2] + 1;
-                         break;
-                    }
-               case 4: //left press, send LT
-                    if(sent == 0){
-                         sendChar('L');
-                         sendChar('T');
-                         sendPressed();
-                         sent = 1;
-                         pressCounts[3] = pressCounts[3] + 1;
-                         break;
-                    }
-               case 5: //click press, send CK
-                    if(sent == 0){
-                         sendChar('C');
-                         sendChar('K');
-                         sendPressed();
-                         sent = 1;
-                         pressCounts[4] = pressCounts[4] + 1;
-                         break;
-                    }
-          }
      }
 
 }
