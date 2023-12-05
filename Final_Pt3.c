@@ -28,7 +28,38 @@ void TIM3_ISR() iv IVT_INT_TIM3 ics ICS_OFF {
      TIM3_SR.UIF = 0; //clear the check bit
      initTIM3(); //will read pot and update the ARR to change timer speed
      GPIOA_ODR.B0 = ~GPIOA_ODR.B0; //flips PA0
-     GPIOE_ODR.B14 = ~GPIOE_ODR.B14;
+     GPIOE_ODR.B14 = ~GPIOE_ODR.B14;  //flips PE14 to activate buzzer
+}
+
+void PD2_Press_LEFT() iv IVT_INT_EXTI2 ics ICS_AUTO {
+     EXTI_PR.B2 = 1;
+     GPIOE_ODR.B13 = ~GPIOE_ODR.B13;
+     pressCounts[3]++;
+     joy = 4;
+}
+
+void PD4_Press_UP() iv IVT_INT_EXTI4 ics ICS_AUTO {
+     EXTI_PR.B4 = 1;
+     GPIOE_ODR.B11 = ~GPIOE_ODR.B11;
+     GPIOE_ODR.B15 = ~GPIOE_ODR.B15;
+     pressCounts[0]++;
+     joy = 1;
+}
+
+void PA6_PB5_Press() iv IVT_INT_EXTI9_5 ics ICS_OFF {
+     if(GPIOA_IDR.B6 == 0){
+          EXTI_PR.B6 = 1;
+          GPIOE_ODR.B9 = ~GPIOE_ODR.B9;
+          GPIOE_ODR.B10 = ~GPIOE_ODR.B10;
+          pressCounts[1]++;
+          joy = 2;
+     }else if (GPIOB_IDR.B5 == 0){
+          EXTI_PR.B5 = 1;
+          GPIOE_ODR.B8 = ~GPIOE_ODR.B8;
+          GPIOE_ODR.B12 = ~GPIOE_ODR.B12;
+          pressCounts[2]++;
+          joy = 3;
+     }
 }
 //******************************************************************************
 //Main:
@@ -37,6 +68,7 @@ void main() {
      initGPIO(); //initializes GPIO
      initTIM1(); //Initializes TIM1
      initTIM3();
+     initEXTI();
      TIM1count = -1;
      buzzerOn = 0;
      for(;;){

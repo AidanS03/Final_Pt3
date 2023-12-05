@@ -27,10 +27,6 @@ void initTIM3(){
      TIM3_CR1 = 1; //enable timer
 }
 
-void initEXTI(){
-
-}
-
 void initGPIO(){  //starts the clocks for GPIO
      RCC_APB2ENR |= 1 << 2;  //enables clock for PortA
      RCC_APB2ENR |= 1 << 3;  //enables clock for PortB
@@ -40,6 +36,49 @@ void initGPIO(){  //starts the clocks for GPIO
 
      GPIOA_CRL = 0x3; // sets PA0 as an output
      GPIOD_CRH = 0x33333333; //set PortD/H as an output
+     GPIOE_CRH = 0x33333333; // set PortE/H as an output
+     
+     GPIOA_CRL.B26 = 1; //Sets PA6 as an input
+     GPIOB_CRL.B22 = 1; //sets PB5 as an input
+     GPIOC_CRH.B22 = 1; //sets PC13 as an input
+     GPIOD_CRL |= 0x40400; //Sets PD2 and PD4 as an input
+}
+
+void initEXTI(){
+     GPIOA_CRL = 0x4000000; //sets PA6 as a floating input
+     GPIOB_CRL = 0x400000; //sets PB5 as a floating input
+     GPIOD_CRL = 0x40400; //sets PD2 and PD4 as a floating input
+
+     AFIO_EXTICR1 = 0x0300; //configure PD2 as an interrupt
+     AFIO_EXTICR2 = 0x0013; //configure PD4, PB5, and PA6 as an external interrupt
+     
+     EXTI_FTSR = 0x0074;   //enable rising edge trigger
+     
+     EXTI_IMR = 0x0074; //sets our interrupts so they cannot be masked, activate immediatly
+     NVIC_ISER0.B8 = 1;  //enables interrupts for line 2
+     NVIC_ISER0.B10 = 1;  //enables interrupts for line 4
+     NVIC_ISER0.B23 = 1;  //enables interrupts for lines 5-9
+}
+
+void initUSART(){ //starts USART1
+     RCC_APB2ENR.AFIOEN= 1; //start clock to PA9 and PA10 can use alternate function
+     AFIO_MAPR = 0xF000000; //do no want to remap PA9 and PA10 in bit 2
+     RCC_APB2ENR |= 1 << 2; //enable clock for PA9 and PA10
+     GPIOA_CRH = 0; //clear PA9 and PA10
+     GPIOA_CRH |= 0x4B << 4; //sets PA9 (Tx) as a push-pull output and PA10 (Rx) as an input
+     RCC_APB2ENR |= 1<<14; //enable clock for USART1
+     USART1_BRR=0X506; //set baud rate to 56000
+     USART1_CR1.B12 = 0; //forces M as 0 so 8 data bits
+     USART1_CR2.B12 = 0; //forces bits 13 and 12 to 00 so there is one stop bit
+     USART1_CR2.B13 = 0;
+     USART1_CR3.B8 = 0; //forces bit 8 to 0 so no RTS hardware flow
+     USART1_CR3.B9 = 0; //forces bit 9 to 0 so no CTS hardware flow
+     USART1_CR1.B9 = 0; //forces even parity but we will turn it off
+     USART1_CR1.B10 = 0;//forces no parity
+     USART1_CR1.B2 = 1; //Rx enabled
+     USART1_CR1.B3 = 1; //Tx enabled
+     USART1_CR1.B13 = 1; //Enables UART and needs to be enabled after all the configuration above
+     Delay_ms(100);
 }
 
 void find7segVal(int sec){
@@ -71,12 +110,6 @@ void sendPressCount(int idx){    //sends the direction label and count through U
 }
 
 int joyRead(){     //determines which direction joystick is being pressed and returns 0-5
-     GPIOA_CRL.B26 = 1; //Sets PA6 as an input
-     GPIOB_CRL.B22 = 1; //sets PB5 as an input
-     GPIOC_CRH.B22 = 1; //sets PC13 as an input
-     GPIOE_CRH = 0x33333333; //Set PortE/H as an output for LEDS
-     GPIOD_CRL |= 0x40400; //Sets PD2 and PD4 as an input
-
 
      if(GPIOD_IDR.B4 == 0){
           return 1; //joystick up return a 1
@@ -102,27 +135,6 @@ void sendPressed(){  //sends the word 'Pressed' over USART
      sendChar('d');
      sendChar(13);
      sendChar(10);
-}
-
-void initUSART(){ //starts USART1
-     RCC_APB2ENR |= 1; //start clock to PA9 and PA10 can use alternate function
-     AFIO_MAPR = 0xF000000; //do no want to remap PA9 and PA10 in bit 2
-     RCC_APB2ENR |= 1 << 2; //enable clock for PA9 and PA10
-     GPIOA_CRH = 0; //clear PA9 and PA10
-     GPIOA_CRH |= 0x4B << 4; //sets PA9 (Tx) as a push-pull output and PA10 (Rx) as an input
-     RCC_APB2ENR |= 1<<14; //enable clock for USART1
-     USART1_BRR=0X506; //set baud rate to 56000
-     USART1_CR1.B12 = 0; //forces M as 0 so 8 data bits
-     USART1_CR2.B12 = 0; //forces bits 13 and 12 to 00 so there is one stop bit
-     USART1_CR2.B13 = 0;
-     USART1_CR3.B8 = 0; //forces bit 8 to 0 so no RTS hardware flow
-     USART1_CR3.B9 = 0; //forces bit 9 to 0 so no CTS hardware flow
-     USART1_CR1.B9 = 0; //forces even parity but we will turn it off
-     USART1_CR1.B10 = 0;//forces no parity
-     USART1_CR1.B2 = 1; //Rx enabled
-     USART1_CR1.B3 = 1; //Tx enabled
-     USART1_CR1.B13 = 1; //Enables UART and needs to be enabled after all the configuration above
-     Delay_ms(100);
 }
 
 int analogRead(){
